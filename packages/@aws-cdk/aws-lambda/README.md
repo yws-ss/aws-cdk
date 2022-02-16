@@ -21,6 +21,34 @@ const fn = new lambda.Function(this, 'MyFunction', {
 });
 ```
 
+## Table Of Contents
+
+- [Handler Code](#handler-code)
+- [Docker Images](#docker-images)
+- [Execution Role](#execution-role)
+- [Function Timeout](#function-timeout)
+- [Resource-based Polices](#resource-based-policies)
+- [Versions](#versions)
+  - [`currentVersion`: Updated hashing logic](#currentversion-updated-hashing-logic)
+- [Aliases](#aliases)
+- [Layers](#layers)
+- [Architecture](#architecture)
+- [Lambda Insights](#lambda-insights)
+- [Event Rule Target](#event-rule-target)
+- [Event Sources](#event-sources)
+- [Imported Lambdas](#imported-lambdas)
+- [Lambda with DLQ](#lambda-with-dlq)
+- [Lambda with X-Ray Tracing](#lambda-with-x-ray-tracing)
+- [Lambda with Profiling](#lambda-with-profiling)
+- [Lambda with Reserved Concurrent Executions](#lambda-with-reserved-concurrent-executions)
+- [AutoScaling](#autoscaling)
+- [Log Group](#log-group)
+- [FileSystem Access](#filesystem-access)
+- [Singleton Function](#singleton-function)
+- [Bundling Asset Code](#bundling-asset-code)
+- [Language-specific APIs](#language-specific-apis)
+- [Code Signing](#code-signing)
+
 ## Handler Code
 
 The `lambda.Code` class includes static convenience methods for various types of
