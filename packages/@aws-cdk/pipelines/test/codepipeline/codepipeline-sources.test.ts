@@ -103,30 +103,35 @@ test('ECR source handles tokenized and namespaced names correctly', () => {
     input: cdkp.CodePipelineSource.ecr(repository),
   });
 
-  expect(pipelineStack).toHaveResourceLike('AWS::CodePipeline::Pipeline', {
-    Stages: Match.arrayWith([{
-      Name: 'Source',
-      Actions: [
-        Match.objectLike({
-          Configuration: Match.objectLike({
-            RepositoryName: { Ref: Match.anyValue() },
+  const template = Template.fromStack(pipelineStack);
+  template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+    Stages: [
+      {
+        Name: 'Source',
+        Actions: [
+          Match.objectLike({
+            Configuration: Match.objectLike({
+              RepositoryName: { Ref: Match.anyValue() },
+            }),
+            Name: Match.objectLike({
+              'Fn::Join': [
+                '_',
+                {
+                  'Fn::Split': [
+                    '/',
+                    {
+                      Ref: Match.anyValue(),
+                    },
+                  ],
+                },
+              ],
+            }),
           }),
-          Name: Match.objectLike({
-            'Fn::Join': [
-              '_',
-              {
-                'Fn::Split': [
-                  '/',
-                  {
-                    Ref: Match.anyValue(),
-                  },
-                ],
-              },
-            ],
-          }),
-        }),
-      ],
-    }]),
+        ],
+      },
+      {},
+      {},
+    ],
   });
 });
 
