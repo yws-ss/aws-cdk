@@ -566,3 +566,106 @@ Annotations.fromStack(stack).hasError(
   Match.stringLikeRegexp('.*Foo::Bar.*'),
 );
 ```
+
+## Property based testing
+
+There are some characteristics that are common to many constructs. So instead of testing those characteristics again 
+and again for each construct individually, you can just define them in a generic way and let the framework validate 
+them for you. For example, for all constructs that have an optional `props` attribute in their constructor, it 
+should be true that:
+
+```ts
+new MyConstruct(stack, 'id') === new MyConstruct(stack, id, {});
+```
+
+More specifically, both should produce the same CloudFormation template when synthesized. You can verify this 
+invariant with a test like this:
+
+```ts
+test('Empty props equal to no props', () => {
+  Checker.fromDirectory(path.join(__dirname))
+    .onlyOptionalProps()
+    .assert(new class implements IAssertion {
+      assert(ctx: Context) {
+        const stack1 = synthesize(ctx);
+        const stack2 = synthesize(ctx, {});
+
+        expect(stack1).toEqual(stack2);
+      }
+    });
+});
+
+function synthesize(ctx: Context, props?: any): any {
+  const app = new App();
+  const stack = new Stack(app, 'stack');
+
+  ctx.createConstruct(stack, 'test', props);
+
+  try {
+    return Template.fromStack(stack).toJSON();
+  } catch (_) {
+    return {};
+  }
+}
+
+```
+
+Breaking it down:
+
+* `Checker.fromDirectory(path.join(__dirname))` creates a checker that knows the types declared in the `.jsii` file 
+  located in the current directory.
+* `onlyOptionalProps()` restricts the checker to only constructs that have optional properties, since what we want 
+  to test in this case only makes sense for this particular subset. Ideally, we would have a generic method `filter()
+  `, that you could use to filter the constructs based on any custom predicate you want.
+* `assert(new class implements IAssertion {assert(ctx: Context){...}}` is a piece of boilerplate code that you use 
+  to wrap your test.
+* `synthesize(ctx, props)` is a helper function (not part of the framework) that creates a new `App` and a new 
+  `Stack`, and uses the `context` to create a construct with the `props` provided. Then it synthesizes the stack and 
+  returns its memory representation.
+* Finally, `expect(stack1).toEqual(stack2);` is a normal assertion using `jest`, to verify that the two stacks are 
+  the same in this case.
+
+Another functionality offered by the framework is the ability to generate a properties object that applies to the 
+construct type under test, but with all properties replaced with tokens. This is useful to assert that constructs 
+won't throw errors when processing a token:   
+
+```ts
+test('Tokens can be used instead of literal values', () => {
+  Checker.fromDirectory(path.join(__dirname))
+    .assert(new class implements IAssertion {
+      assert(ctx: Context) {
+        const app = new App();
+        const stack = new Stack(app, 'stack');
+        let tokenizedProps = ctx.tokenizedProps();
+        ctx.createConstruct(stack, 'test', tokenizedProps);
+      }
+    });
+});
+```
+
+> Please note that `tokenizedProps()` is not fully working yet. There are many edge cases to consider, such as cyclic 
+> dependencies and more complex types (other construct classes, for example). It may not even be possible to achieve 
+> this at all.
+
+In the future, this API can be extended with things like:
+
+```ts
+test('Constructs imported from ARN correctly know their environment', () => {
+  const env = {
+    account: '2383838383',
+    region: 'eu-west-1',
+  };
+    
+  Checker.fromDirectory(path.join(__dirname))
+    .withEnv(env)
+    .assert(new class implements IAssertion {
+      assert(ctx: Context) {
+        const app = new App();
+        const stack = new Stack(app, 'stack');
+        const instance = ctx.importFromArn(stack, 'test');
+
+        validateEnvironment(instance, env);
+      }
+    });
+});
+```
