@@ -412,3 +412,119 @@ describe('ThirdPartyAttributions', () => {
     expect(pkgJson.hasReports).toBe(false);
   });
 });
+
+describe('RosettaFolder', () => {
+  let fakeModule: FakeModule | undefined;
+
+  beforeEach(() => {
+    fakeModule = undefined;
+  });
+
+  afterEach(async () => {
+    if (fakeModule) {
+      await fakeModule.cleanup();
+    }
+  });
+
+  test('skips modules without strict rosetta', async () => {
+    fakeModule = new FakeModule({
+      files: {
+        'package.json': {},
+      },
+    });
+    const dirPath = await fakeModule.tmpdir();
+
+    const rule = new rules.RosettaFolder();
+
+    const pkgJson = new PackageJson(path.join(dirPath, 'package.json'));
+    rule.validate(pkgJson);
+
+    expect(pkgJson.hasReports).toBe(false);
+  });
+
+  test('passes on modules with rosetta folder', async () => {
+    fakeModule = new FakeModule({
+      files: {
+        'package.json': {
+          jsii: {
+            metadata: {
+              jsii: {
+                rosetta: {
+                  strict: true,
+                },
+              },
+            },
+          },
+        },
+        'rosetta/default.ts-fixture': '',
+      },
+    });
+    const dirPath = await fakeModule.tmpdir();
+
+    const rule = new rules.RosettaFolder();
+
+    const pkgJson = new PackageJson(path.join(dirPath, 'package.json'));
+    rule.validate(pkgJson);
+
+    expect(pkgJson.hasReports).toBe(false);
+  });
+
+  test('modules with no rosetta folder can be fixed', async () => {
+    fakeModule = new FakeModule({
+      files: {
+        'package.json': {
+          jsii: {
+            metadata: {
+              jsii: {
+                rosetta: {
+                  strict: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const dirPath = await fakeModule.tmpdir();
+
+    const rule = new rules.RosettaFolder();
+
+    const pkgJson = new PackageJson(path.join(dirPath, 'package.json'));
+    rule.validate(pkgJson);
+
+    expect(pkgJson.hasReports).toBe(true);
+    pkgJson.applyFixes();
+    const fixedContents = await fs.readFile(path.join(dirPath, 'rosetta', 'default.ts-fixture'), { encoding: 'utf8' });
+    expect(fixedContents).toMatch(/import { Construct } from 'constructs'/);
+  });
+
+  test('modules that have rosetta folder with no default fixture can be fixed', async () => {
+    fakeModule = new FakeModule({
+      files: {
+        'package.json': {
+          jsii: {
+            metadata: {
+              jsii: {
+                rosetta: {
+                  strict: true,
+                },
+              },
+            },
+          },
+        },
+        'rosetta/test.txt': '',
+      },
+    });
+    const dirPath = await fakeModule.tmpdir();
+
+    const rule = new rules.RosettaFolder();
+
+    const pkgJson = new PackageJson(path.join(dirPath, 'package.json'));
+    rule.validate(pkgJson);
+
+    expect(pkgJson.hasReports).toBe(true);
+    pkgJson.applyFixes();
+    const fixedContents = await fs.readFile(path.join(dirPath, 'rosetta', 'default.ts-fixture'), { encoding: 'utf8' });
+    expect(fixedContents).toMatch(/import { Construct } from 'constructs'/);
+  });
+});

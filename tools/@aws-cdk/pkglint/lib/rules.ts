@@ -357,7 +357,7 @@ export class ReadmeFile extends ValidationRule {
           readmeFile,
           [
             `# ${headline || pkg.json.description}`,
-            'This module is part of the[AWS Cloud Development Kit](https://github.com/aws/aws-cdk) project.',
+            'This module is part of the [AWS Cloud Development Kit](https://github.com/aws/aws-cdk) project.',
           ].join('\n'),
         ),
       });
@@ -372,6 +372,61 @@ export class ReadmeFile extends ValidationRule {
         });
       }
     }
+  }
+}
+
+/**
+ * There must be a rosetta folder with a `default.ts-fixture` file.
+ */
+export class RosettaFolder extends ValidationRule {
+  public readonly name = 'package-info/rosetta/default-ts.fixture';
+
+  public validate(pkg: PackageJson): void {
+    const scopes = pkg.json.jsii?.metadata?.jsii?.rosetta?.strict;
+    if (!scopes) {
+      return;
+    }
+
+    const exemptModules = ['@aws-cdk/assets', '@aws-cdk/aws-autoscaling-common'];
+    if (exemptModules.includes(pkg.json.name)) {
+      return;
+    }
+
+    const rosettaFolder = path.join(pkg.packageRoot, 'rosetta');
+    const defaultRosettaFixture = path.join(rosettaFolder, 'default.ts-fixture');
+
+    if (!fs.existsSync(rosettaFolder)) {
+      pkg.report({
+        ruleName: this.name,
+        message: "There must be a folder named 'rosetta' (with a default fixture named 'default.ts-fixture') at the root of the package",
+        fix: () => {
+          fs.mkdirSync(rosettaFolder);
+          this.makeDefaultRosettaFixture(defaultRosettaFixture);
+        },
+      });
+    } else if (!fs.existsSync(defaultRosettaFixture)) {
+      pkg.report({
+        ruleName: this.name,
+        message: "There must be a default fixture named 'default.ts-fixture' in the rosetta folder",
+        fix: () => this.makeDefaultRosettaFixture(defaultRosettaFixture),
+      });
+    }
+  }
+
+  private makeDefaultRosettaFixture(filePath: string): void {
+    fs.writeFileSync(
+      filePath,
+      [
+        "import { Construct } from 'constructs';",
+        "import { Stack } from '@aws-cdk/core';",
+        '',
+        'class MyStack extends Stack {',
+        '  constructor(scope: Construct, id: string) {',
+        '    /// here',
+        '  }',
+        '}',
+      ].join('\n'),
+    );
   }
 }
 
