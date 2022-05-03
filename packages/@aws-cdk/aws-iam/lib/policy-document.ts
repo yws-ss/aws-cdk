@@ -4,7 +4,6 @@ import { IConstruct } from 'constructs';
 import { PolicyStatement } from './policy-statement';
 import { mergeStatements } from './private/merge-statements';
 import { PostProcessPolicyDocument } from './private/postprocess-policy-document';
-import { sum } from './util';
 
 /**
  * Properties for a new PolicyDocument
