@@ -30,15 +30,6 @@ export interface BootstrapRole {
    * @default - Discover SSM parameter by reading stack
    */
   readonly bootstrapStackVersionSsmParameter?: string;
-
-  /**
-   * Tags associated with the given role
-   *
-   * This information may be used to create IAM policies targeting this role.
-   *
-   * @default - No tags
-   */
-  readonly tags?: Record<string, string>;
 }
 
 /**
@@ -80,9 +71,6 @@ export interface AwsCloudFormationStackProperties {
   /**
    * The role that needs to be assumed to deploy the stack
    *
-   * The `assumeRole` field is the preferred way to pass this information, but this field
-   * needs to be supported for backwards compatibility.
-   *
    * @default - No role is assumed (current credentials are used)
    */
   readonly assumeRoleArn?: string;
@@ -90,21 +78,9 @@ export interface AwsCloudFormationStackProperties {
   /**
    * External ID to use when assuming role for cloudformation deployments
    *
-   * The `assumeRole` field is the preferred way to pass this information, but this field
-   * needs to be supported for backwards compatibility.
-   *
    * @default - No external ID
    */
   readonly assumeRoleExternalId?: string;
-
-  /**
-   * Tags associated with the given role
-   *
-   * This information may be used to create IAM policies targeting this role.
-   *
-   * @default - No tags
-   */
-  readonly assumeRoleTags?: Record<string, string>;
 
   /**
    * The role that is passed to CloudFormation to execute the change set

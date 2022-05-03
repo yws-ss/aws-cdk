@@ -47,7 +47,6 @@ export class AssetManifestBuilder {
           region: resolvedOr(stack.region, undefined),
           assumeRoleArn: role?.assumeRoleArn,
           assumeRoleExternalId: role?.assumeRoleExternalId,
-          assumeRoleTags: role?.tags,
         },
       },
     };
@@ -102,7 +101,6 @@ export class AssetManifestBuilder {
           region: resolvedOr(stack.region, undefined),
           assumeRoleArn: role?.assumeRoleArn,
           assumeRoleExternalId: role?.assumeRoleExternalId,
-          assumeRoleTags: role?.tags,
         },
       },
     };
@@ -162,7 +160,6 @@ export class AssetManifestBuilder {
 export interface RoleOptions {
   readonly assumeRoleArn?: string;
   readonly assumeRoleExternalId?: string;
-  readonly tags?: Record<string, string>;
 }
 
 function validateFileAssetSource(asset: FileAssetSource) {

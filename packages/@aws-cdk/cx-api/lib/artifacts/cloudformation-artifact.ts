@@ -63,13 +63,6 @@ export class CloudFormationStackArtifact extends CloudArtifact {
   public readonly assumeRoleArn?: string;
 
   /**
-   * Tags associated with the deployment role
-   *
-   * @default - No tags are known
-   */
-  public readonly assumeRoleTags?: Record<string, string>;
-
-  /**
    * External ID to use when assuming role for cloudformation deployments
    *
    * @default - No external ID
@@ -144,7 +137,6 @@ export class CloudFormationStackArtifact extends CloudArtifact {
     this.tags = properties.tags ?? this.tagsFromMetadata();
     this.assumeRoleArn = properties.assumeRoleArn;
     this.assumeRoleExternalId = properties.assumeRoleExternalId;
-    this.assumeRoleTags = properties.assumeRoleTags;
     this.cloudFormationExecutionRoleArn = properties.cloudFormationExecutionRoleArn;
     this.stackTemplateAssetObjectUrl = properties.stackTemplateAssetObjectUrl;
     this.requiresBootstrapStackVersion = properties.requiresBootstrapStackVersion;
