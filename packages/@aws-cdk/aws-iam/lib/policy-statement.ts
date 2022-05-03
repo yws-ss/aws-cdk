@@ -508,7 +508,9 @@ export class PolicyStatement {
     let ret = 0;
 
     const actionEstimate = 20;
-    const arnEstimate = 100;
+    const arnEstimate = 120; // A safe (over)estimate on how long ARNs typically are
+
+    ret += `"Effect": "${this.effect}",`.length;
 
     count('Action', this.actions, actionEstimate);
     count('NotAction', this.notActions, actionEstimate);

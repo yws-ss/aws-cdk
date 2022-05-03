@@ -1,4 +1,4 @@
-import { ArnFormat, IConstruct, Duration, Resource, Stack, Token, TokenComparison, Aspects, ConcreteDependable } from '@aws-cdk/core';
+import { ArnFormat, IConstruct, Duration, Resource, Stack, Token, TokenComparison, Aspects, ConcreteDependable, Annotations } from '@aws-cdk/core';
 import { Construct, Node } from 'constructs';
 import { Grant } from './grant';
 import { CfnRole } from './iam.generated';
@@ -11,7 +11,7 @@ import { AddToPrincipalPolicyResult, ArnPrincipal, IPrincipal, PrincipalPolicyFr
 import { defaultAddPrincipalToAssumeRole } from './private/assume-role-policy';
 import { ImmutableRole } from './private/immutable-role';
 import { MutatingPolicyDocumentAdapter } from './private/policydoc-adapter';
-import { AttachedPolicies, UniqueStringSet } from './util';
+import { AttachedPolicies, UniqueStringSet, sum } from './util';
 
 const MAX_INLINE_SIZE = 10000;
 const MAX_MANAGEDPOL_SIZE = 6000;
@@ -343,6 +343,7 @@ export class Role extends Resource implements IRole {
   private readonly inlinePolicies: { [name: string]: PolicyDocument };
   private readonly dependables = new Map<PolicyStatement, ConcreteDependable>();
   private immutableRole?: IRole;
+  private _didSplit = false;
 
   constructor(scope: Construct, id: string, props: RoleProps) {
     super(scope, id, {
@@ -509,9 +510,10 @@ export class Role extends Resource implements IRole {
    * This gets around the 10k bytes limit on role policies.
    */
   private splitLargePolicy() {
-    if (!this.defaultPolicy) {
+    if (!this.defaultPolicy || this._didSplit) {
       return;
     }
+    this._didSplit = true;
 
     const self = this;
     const splitDocument = this.defaultPolicy.document;
@@ -521,6 +523,13 @@ export class Role extends Resource implements IRole {
       throw new Error('Unexpected operation order: splitLargePolicy() called on already-merged policy document');
     }
     const splitOffDocs = splitDocument._splitDocument(MAX_INLINE_SIZE, MAX_MANAGEDPOL_SIZE);
+
+    const mpCount = this.managedPolicies.length + splitOffDocs.length;
+    if (mpCount > 20) {
+      Annotations.of(this).addWarning(`Policy too large: ${mpCount} exceeds the maximum of 20 managed policies attached to a Role`);
+    } else if (mpCount > 10) {
+      Annotations.of(this).addWarning(`Policy large: ${mpCount} exceeds 10 managed policies attached to a Role, this requires a quota increase`);
+    }
 
     // Create the managed policies and fix up the dependencies
     markDeclaringConstruct(splitDocument, this.defaultPolicy);

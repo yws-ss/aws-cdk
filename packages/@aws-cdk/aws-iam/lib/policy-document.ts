@@ -4,6 +4,7 @@ import { IConstruct } from 'constructs';
 import { PolicyStatement } from './policy-statement';
 import { mergeStatements } from './private/merge-statements';
 import { PostProcessPolicyDocument } from './private/postprocess-policy-document';
+import { sum } from './util';
 
 /**
  * Properties for a new PolicyDocument
@@ -215,6 +216,7 @@ export class PolicyDocument implements cdk.IResolvable {
       const statementSize = statementSizes.get(statement) ?? 0;
       if (selfSize + statementSize < selfMaximumSize) {
         // Fits in self
+        selfSize += statementSize;
         i++;
         continue;
       }
@@ -231,7 +233,7 @@ export class PolicyDocument implements cdk.IResolvable {
 
     function findDocWithSpace(size: number) {
       let j = 0;
-      while (j < newDocs.length && polSize(newDocs[j]) + size < splitMaximumSize) {
+      while (j < newDocs.length && polSize(newDocs[j]) + size > splitMaximumSize) {
         j++;
       }
       if (j < newDocs.length) {

@@ -594,3 +594,7 @@ test('managed policy ARNs are deduplicated', () => {
     ],
   });
 });
+
+test.todo('if the inline policy grows too large, split it off into ManagedPolicies');
+
+test.todo('Grant Dependables are correct, even if statements are moved to ManagedPolicies ');

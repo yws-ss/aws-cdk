@@ -1,4 +1,4 @@
-import { Template } from '@aws-cdk/assertions';
+import { Template, Annotations, Match } from '@aws-cdk/assertions';
 import * as ccommit from '@aws-cdk/aws-codecommit';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as cdk from '@aws-cdk/core';
@@ -112,15 +112,30 @@ test('Policy sizes do not exceed the maximum size', () => {
     }
   }
 
+
   // Validate sizes
-  for (const [logId, poldocs] of Object.entries(rolePolicies)) {
-    // Not entirely accurate, because our "Ref"s and "Fn::GetAtt"s actually need to be evaluated
-    // to ARNs... but it gives a good indication.
-    const totalJson = JSON.stringify(poldocs);
-    if (totalJson.length > 10000) {
-      throw new Error(`Policy for Role ${logId} is too large (${totalJson.length} bytes): ${JSON.stringify(poldocs, undefined, 2)}`);
+  //
+  // Not entirely accurate, because our "Ref"s and "Fn::GetAtt"s actually need to be evaluated
+  // to ARNs... but it gives an order-of-magnitude indication.
+  // 10% of margin for CFN intrinsics like { Fn::Join } and { Ref: 'AWS::Partition' } which don't contribute to
+  // the ACTUAL size, but do contribute to the measured size here.
+  const cfnOverheadMargin = 1.10;
+
+  for (const [logId, poldoc] of Object.entries(rolePolicies)) {
+    const totalJson = JSON.stringify(poldoc);
+    if (totalJson.length > 10000 * cfnOverheadMargin) {
+      throw new Error(`Policy for Role ${logId} is too large (${totalJson.length} bytes): ${JSON.stringify(poldoc, undefined, 2)}`);
     }
   }
+
+  for (const [logId, poldoc] of Object.entries(template.findResources('AWS::IAM::ManagedPolicy'))) {
+    const totalJson = JSON.stringify(poldoc);
+    if (totalJson.length > 6000 * cfnOverheadMargin) {
+      throw new Error(`Managed Policy ${logId} is too large (${totalJson.length} bytes): ${JSON.stringify(poldoc, undefined, 2)}`);
+    }
+  }
+
+  Annotations.fromStack(pipelineStack).hasNoWarning('*', Match.anyValue());
 });
 
 interface ReuseCodePipelineStackProps extends cdk.StackProps {
