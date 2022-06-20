@@ -262,13 +262,6 @@ export interface CodeBuildOptions {
   readonly subnetSelection?: ec2.SubnetSelection;
 
   /**
-   * Caching strategy to use.
-   *
-   * @default - No cache
-   */
-  readonly cache?: cb.Cache;
-
-  /**
    * The number of minutes after which AWS CodeBuild stops the build if it's
    * not complete. For valid values, see the timeoutInMinutes field in the AWS
    * CodeBuild User Guide.
